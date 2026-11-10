@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#060a13">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="BDIX Hub TV — a fast, remote-friendly launcher for BDIX media, FTP and live TV servers on Android TV.">
+<title>BDIX Hub TV</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f59e0b'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23fff'/%3E%3Cpath d='M10 10a8.5 8.5 0 0 0 0 12M22 10a8.5 8.5 0 0 1 0 12' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<!-- Optional font: loads in the background, the page never waits for it and falls back to the system font offline. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" media="print" onload="this.media='all'">
+
+<style>
+/* ===== Tokens ===== */
+:root{
+  --ink:#060a13; --txt:#e8edf6; --mut:#9aa8c0; --dim:#7b8aa5;
+  --line:rgba(148,163,184,.16); --amber:#fbbf24;
+  --cy:#22d3ee; --pk:#f472b6; --vi:#a78bfa; --gn:#34d399;
+  --mx:40px; --ts:1;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Roboto Mono","Droid Sans Mono",monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{font-size:calc(16px*var(--ts));-webkit-text-size-adjust:100%}
+@media (min-width:1280px){html{font-size:calc(18px*var(--ts))}}
+@media (min-width:1700px){html{font-size:calc(21px*var(--ts))}}
+body{
+  margin:0;background:var(--ink);color:var(--txt);line-height:1.35;
+  font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overflow-x:hidden;
+}
+#bg{position:fixed;top:0;right:0;bottom:0;left:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(60rem 30rem at 8% -12%,rgba(251,191,36,.14),transparent 60%),
+  radial-gradient(50rem 32rem at 98% 0%,rgba(34,211,238,.09),transparent 60%),
+  radial-gradient(46rem 38rem at 50% 118%,rgba(244,114,182,.08),transparent 60%),var(--ink)}
+a{color:inherit;text-decoration:none;-webkit-user-drag:none}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0;margin:0}
+h1,h2,h3,p{margin:0}
+.i{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-.15em}
+.i.fill{fill:currentColor}
+.am{color:var(--amber)}
+
+/* ===== Layout ===== */
+.wrap{max-width:92rem;margin:0 auto;padding:1.1rem var(--mx) 4.4rem}
+section{margin-bottom:1.3rem}
+
+/* ===== Focus system (one ring everywhere) ===== */
+.f{position:relative;outline:none}
+.f:focus{outline:none;box-shadow:0 0 0 .2rem var(--amber),0 .5rem 1.4rem rgba(0,0,0,.55)!important;border-color:var(--amber)!important;z-index:5}
+.fx .f{transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease,background-color .14s ease}
+.fx .f:focus{transform:scale(1.035)}
+.fx .tab:focus,.fx .sg:focus,.fx .btn:focus,.fx .ib:focus{transform:scale(1.05)}
+body.mouse .f:focus{box-shadow:none!important;transform:none}
+
+/* ===== Header ===== */
+.hdr{display:grid;grid-template-columns:1fr auto;align-items:center;grid-gap:1rem;padding:.2rem 0 .9rem}
+.brand{display:grid;grid-template-columns:auto 1fr;align-items:center;grid-gap:.9rem;min-width:0}
+.logo{width:3rem;height:3rem;border-radius:.9rem;display:grid;place-items:center;color:#fff;transform:rotate(4deg);
+  background:linear-gradient(135deg,#fbbf24,#f97316 55%,#f43f5e);box-shadow:0 0 1.5rem rgba(249,115,22,.4)}
+.logo .i{width:1.6rem;height:1.6rem;transform:rotate(-4deg)}
+.ttl{display:flex;align-items:center}
+h1{font-size:1.55rem;font-weight:800;letter-spacing:-.01em;line-height:1;color:#fff}
+h1 span{background:linear-gradient(90deg,#fcd34d,#fb923c);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.pill{margin-left:.75rem;font-size:.7rem;font-weight:800;letter-spacing:.08em;padding:.2rem .6rem;border-radius:99px;
+  color:#fcd34d;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);white-space:nowrap}
+.tagline{margin-top:.4rem;font-size:.88rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hr{display:grid;grid-auto-flow:column;align-items:center;grid-gap:1.1rem}
+.clock{text-align:right;line-height:1.15}
+.clock b{display:block;font-family:var(--mono);font-size:1.35rem;font-weight:700;color:#fcd34d}
+.clock span{font-size:.78rem;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.ib{width:3.1rem;height:3.1rem;border-radius:1rem;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#cbd5e1;font-size:1.3rem}
+
+/* ===== Search / URL bar ===== */
+.bar{display:grid;grid-template-columns:1.25fr 1fr auto;grid-gap:.8rem;padding:.8rem;margin-bottom:.8rem;border-radius:1.4rem;
+  background:rgba(13,20,36,.88);border:1px solid var(--line)}
+.fld{position:relative;min-width:0}
+.fld>.i{position:absolute;left:1rem;top:50%;margin-top:-.6rem;width:1.2rem;height:1.2rem;color:var(--mut);pointer-events:none}
+.inp{display:block;width:100%;height:3.2rem;padding:0 3.2rem 0 2.9rem;border-radius:1rem;border:1px solid var(--line);background:rgba(0,0,0,.38);
+  color:#fff;font-family:inherit;font-size:1rem;font-weight:600;-webkit-user-select:text;user-select:text}
+.inp::placeholder{color:var(--dim);font-weight:500}
+.inp.mono{font-family:var(--mono);font-size:.95rem;color:#a5f3fc;padding-right:1rem}
+.clr{position:absolute;right:.45rem;top:.45rem;width:2.3rem;height:2.3rem;border-radius:.8rem;display:grid;place-items:center;color:var(--mut);background:rgba(255,255,255,.07);font-size:1.15rem}
+.go{height:3.2rem;padding:0 1.5rem;border-radius:1rem;display:grid;grid-auto-flow:column;align-items:center;grid-gap:.55rem;
+  background:linear-gradient(90deg,#fbbf24,#f97316);color:#1a1205;font-weight:800;font-size:1rem;letter-spacing:.04em;border:1px solid transparent}
+
+/* ===== Horizontal rails (tabs + posters) ===== */
+.rail{display:grid;grid-auto-flow:column;grid-auto-columns:max-content;grid-gap:.8rem;overflow-x:auto;overflow-y:hidden;
+  padding:.8rem var(--mx);margin:-.8rem calc(var(--mx)*-1);scrollbar-width:none;-ms-overflow-style:none}
+.rail::-webkit-scrollbar{display:none}
+.rail::after{content:"";display:block;width:calc(var(--mx) - .8rem);height:1px}
+.fx .rail{scroll-behavior:smooth}
+.rail.pr{grid-auto-columns:15rem}
+.tabs{margin-bottom:.3rem}
+.tab{height:2.9rem;padding:0 1.15rem;border-radius:99px;display:grid;grid-auto-flow:column;align-items:center;grid-gap:.55rem;
+  font-size:.95rem;font-weight:800;white-space:nowrap;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#dbe4f3}
+.tab .n{font-family:var(--mono);font-size:.78rem;font-weight:700;opacity:.7}
+.tab.on{background:var(--amber);color:#1a1205;border-color:var(--amber)}
+.tab.on .i{color:inherit!important}
+.c-cy{color:var(--cy)}.c-pk{color:var(--pk)}.c-gn{color:var(--gn)}.c-vi{color:var(--vi)}.c-am{color:var(--amber)}
+
+/* ===== Section heading ===== */
+.sh{display:flex;align-items:center;margin-bottom:.75rem;font-size:.95rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#dbe4f3}
+.sh .i{width:1.15rem;height:1.15rem;margin-right:.6rem}
+.sh i{flex:1;height:1px;margin:0 1rem;background:linear-gradient(90deg,rgba(255,255,255,.2),transparent)}
+.sh .meta{font-family:var(--mono);font-size:.85rem;font-weight:600;letter-spacing:0;text-transform:none;color:var(--mut);white-space:nowrap}
+.sh .meta b{color:#fff}.sh .meta b.am{color:var(--amber)}
+
+/* ===== Posters (rails) ===== */
+.poster{display:flex;flex-direction:column;justify-content:space-between;height:8.6rem;padding:.9rem;border-radius:1.15rem;overflow:hidden;color:#fff;
+  border:1px solid rgba(255,255,255,.16)}
+.poster::before{content:"";position:absolute;left:0;right:0;bottom:0;top:25%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.62))}
+.poster>*{position:relative}
+.pt{align-self:flex-start;font-size:.7rem;font-weight:800;letter-spacing:.1em;padding:.2rem .55rem;border-radius:.5rem;background:rgba(0,0,0,.42)}
+.pi{display:block;font-size:.84rem;font-weight:600;color:rgba(255,255,255,.82);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pn{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:1.08rem;font-weight:800;line-height:1.15}
+.poster>.pf{position:absolute;right:.8rem;top:.8rem;width:1.3rem;height:1.3rem;color:var(--amber)}
+
+/* ===== Server grid + cards ===== */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(20rem,1fr));grid-gap:1rem}
+.dense .grid{grid-template-columns:repeat(auto-fill,minmax(15.5rem,1fr))}
+.item{position:relative}
+.card{display:grid;grid-template-columns:3.5rem 1fr;align-items:center;grid-gap:.9rem;min-height:5.8rem;padding:.8rem .95rem;border-radius:1.15rem;
+  border:1px solid var(--line);background:linear-gradient(180deg,#15203a,#0f182c);box-shadow:0 .35rem 1rem rgba(0,0,0,.3)}
+.dense .card{grid-template-columns:3rem 1fr;grid-gap:.75rem;padding:.7rem .75rem}
+.dense .av{width:3rem;height:3rem;font-size:1rem}
+.av{position:relative;width:3.5rem;height:3.5rem;border-radius:1.05rem;display:grid;place-items:center;font-size:1.1rem;font-weight:800;color:#fff;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.av.lg{width:4rem;height:4rem;font-size:1.25rem}
+.avb{position:absolute;right:-.35rem;bottom:-.35rem;width:1.4rem;height:1.4rem;border-radius:50%;display:grid;place-items:center;background:#0b1222;border:2px solid #15203a;font-size:.68rem}
+.avb.tv{color:var(--pk)}.avb.md{color:var(--cy)}
+.cb{display:block;min-width:0}
+.cn{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:1.08rem;font-weight:800;line-height:1.2;color:#fff}
+.cn .nf{width:.95rem;height:.95rem;margin-right:.35rem;color:var(--amber);vertical-align:-.1em}
+.ci{display:block;margin-top:.15rem;font-size:.86rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl{display:flex;align-items:center;justify-content:space-between;margin-top:.2rem}
+.ch{flex:1;min-width:0;font-family:var(--mono);font-size:.82rem;font-weight:600;color:#67e8f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc{flex:none;margin-left:.6rem;padding:.1rem .5rem;border-radius:.5rem;font-size:.74rem;font-weight:800;color:#fcd34d;background:rgba(251,191,36,.12)}
+.opt{display:none;position:absolute;right:.6rem;bottom:.6rem;width:2.5rem;height:2.5rem;border-radius:.85rem;place-items:center;z-index:2;
+  background:rgba(0,0,0,.45);border:1px solid var(--line);color:#e2e8f0;font-size:1.2rem}
+.show-opt .opt,.mouse .item:hover .opt{display:grid}
+.show-opt .card{padding-right:3.7rem}
+
+.empty{text-align:center;padding:3.5rem 1rem}
+.empty .big{width:5rem;height:5rem;margin:0 auto 1rem;border-radius:1.5rem;display:grid;place-items:center;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--dim);font-size:2rem}
+.empty h3{font-size:1.25rem;font-weight:800;color:#fff;margin-bottom:.3rem}
+.empty p{font-size:.95rem;color:var(--mut)}
+.empty .btn{margin-top:1.1rem}
+
+/* ===== Buttons ===== */
+.btn{height:2.9rem;padding:0 1.2rem;border-radius:.95rem;display:inline-grid;grid-auto-flow:column;align-items:center;grid-gap:.55rem;white-space:nowrap;
+  font-size:.95rem;font-weight:800;color:#1a1205;background:var(--amber);border:1px solid var(--amber)}
+.btn.ghost{color:#e2e8f0;background:rgba(255,255,255,.07);border-color:var(--line)}
+.btn .am{color:inherit}
+
+/* ===== Overlay panels (server options + settings) ===== */
+.ov{position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;display:grid;place-items:center;padding:1rem var(--mx) 3.2rem;background:rgba(3,6,12,.84)}
+.panel{width:100%;max-width:56rem;max-height:100%;overflow-y:auto;padding:1.3rem;border-radius:1.6rem;scrollbar-width:none;
+  background:linear-gradient(180deg,#131d35,#0d1527);border:1px solid rgba(255,255,255,.12);box-shadow:0 2rem 5rem rgba(0,0,0,.7)}
+.panel::-webkit-scrollbar{display:none}
+.ph{display:grid;grid-template-columns:auto 1fr auto;align-items:center;grid-gap:1rem;margin-bottom:1.1rem}
+.ph .pht{grid-column:2;min-width:0}
+.ph>.pha:last-child{grid-column:3}
+.ph h2{font-size:1.4rem;font-weight:800;color:#fff;line-height:1.15}
+.ph p{margin-top:.2rem;font-size:.9rem;color:var(--mut)}
+.pha{display:grid;grid-auto-flow:column;grid-gap:.6rem}
+.lh2{margin-bottom:.7rem;font-size:.9rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#dbe4f3}
+.lh2 b{color:var(--amber)}
+.lh2 span{margin-left:.8rem;font-size:.82rem;font-weight:600;letter-spacing:0;text-transform:none;color:var(--mut)}
+.links{display:grid;grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));grid-gap:.7rem;padding:.3rem}
+.lr{display:grid;grid-template-columns:1.4rem 1fr auto;align-items:center;grid-gap:.7rem;padding:.85rem .95rem;border-radius:1rem;
+  background:rgba(255,255,255,.045);border:1px solid var(--line)}
+.lr .li{color:var(--mut);font-size:1.15rem}
+.lr .lt{min-width:0;font-family:var(--mono);font-size:.95rem;font-weight:700;color:#e8edf6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lr.def{border-color:rgba(251,191,36,.45);background:rgba(251,191,36,.07)}
+.lg{display:grid;grid-auto-flow:column;grid-gap:.35rem}
+.tg{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.06em;padding:.12rem .45rem;border-radius:.45rem;background:rgba(255,255,255,.08);color:#cbd5e1}
+.tg.ip{color:#67e8f9;background:rgba(34,211,238,.12)}.tg.hs{color:#6ee7b7;background:rgba(52,211,153,.12)}.tg.df{color:#1a1205;background:var(--amber)}
+.pfoot{margin-top:1rem}
+.srow{display:grid;grid-template-columns:1fr auto;align-items:center;grid-gap:1rem;padding:.8rem .3rem;border-top:1px solid var(--line)}
+.srow:first-of-type{border-top:0}
+.st b{display:block;font-size:1.02rem;font-weight:800;color:#fff}
+.st small{display:block;margin-top:.15rem;font-size:.84rem;color:var(--mut);max-width:30rem}
+.seg{display:grid;grid-auto-flow:column;grid-gap:.5rem;padding:.3rem}
+.sg{height:2.7rem;padding:0 1rem;border-radius:.9rem;white-space:nowrap;font-size:.92rem;font-weight:800;color:#dbe4f3;background:rgba(255,255,255,.07);border:1px solid var(--line)}
+.sg.on{background:var(--amber);color:#1a1205;border-color:var(--amber)}
+.about{margin-top:.8rem;text-align:center;font-family:var(--mono);font-size:.8rem;color:var(--dim)}
+
+/* ===== Hint bar + toast ===== */
+.hints{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;justify-content:space-between;align-items:center;padding:.5rem var(--mx);
+  background:rgba(6,10,19,.94);border-top:1px solid var(--line);font-size:.82rem;color:var(--mut)}
+.hk{margin-right:1.3rem;white-space:nowrap}
+.hk kbd{display:inline-block;margin-right:.45rem;padding:.12rem .55rem;border-radius:.5rem;background:rgba(255,255,255,.07);border:1px solid var(--line);
+  font-family:var(--mono);font-size:.75rem;font-weight:700;color:#fcd34d}
+.ver{font-family:var(--mono);font-size:.75rem;color:var(--dim);white-space:nowrap}
+.toast{position:fixed;top:1rem;left:50%;z-index:80;max-width:80vw;display:none;align-items:center;padding:.7rem 1.3rem .7rem .8rem;border-radius:1.1rem;
+  background:rgba(13,20,36,.97);border:2px solid var(--amber);color:#fff;font-weight:700;font-size:1rem;box-shadow:0 1rem 2.4rem rgba(0,0,0,.6);
+  transform:translateX(-50%);pointer-events:none}
+.toast.show{display:flex}
+.toast .tI{width:2rem;height:2rem;margin-right:.75rem;border-radius:.7rem;display:grid;place-items:center;background:rgba(255,255,255,.08);flex:none}
+.toast span.tM{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx .toast.show{animation:tin .2s ease-out}
+@keyframes tin{from{opacity:0;transform:translate(-50%,-.6rem)}to{opacity:1;transform:translate(-50%,0)}}
+.fx .spin{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media (max-width:760px){
+  .bar{grid-template-columns:1fr}
+  .clock{display:none}
+  .hints .ver{display:none}
+}
+</style>
+</head>
+
+<body class="fx">
+<div id="bg"></div>
+
+<!-- ===== Icon sprite (inline, so nothing is loaded from a CDN) ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-radio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
+  <symbol id="i-loader" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></symbol>
+</svg>
+
+<div class="wrap">
+
+  <!-- ===== Header ===== -->
+  <header class="hdr" data-top>
+    <div class="brand">
+      <div class="logo"><svg class="i" aria-hidden="true"><use href="#i-radio"/></svg></div>
+      <div style="min-width:0">
+        <div class="ttl"><h1>BDIX HUB <span>TV</span></h1><span class="pill">MI BOX 4</span></div>
+        <p class="tagline">Every BDIX media server &amp; live TV portal — one remote, one hub.</p>
+      </div>
+    </div>
+    <div class="hr">
+      <div class="clock" aria-hidden="true"><b id="clk">--:--</b><span id="dte">&nbsp;</span></div>
+      <button class="f ib" id="gear" data-act="settings" aria-label="Settings" title="Settings"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg></button>
+    </div>
+  </header>
+
+  <!-- ===== Search + custom address ===== -->
+  <div class="bar" data-top>
+    <div class="fld">
+      <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
+      <input id="q" class="f inp" type="text" placeholder="Search servers, ISPs, IPs…  (OK to type)" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search servers">
+      <button id="clr" class="f clr" data-act="clrq" aria-label="Clear search" hidden><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="fld">
+      <svg class="i" aria-hidden="true"><use href="#i-globe"/></svg>
+      <input id="u" class="f inp mono" type="text" inputmode="url" placeholder="Custom IP / URL  e.g. 172.16.50.4:8096" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" aria-label="Custom address">
+    </div>
+    <button id="go" class="f go" data-act="go" aria-label="Open custom address"><svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg>GO</button>
+  </div>
+
+  <!-- ===== Category tabs ===== -->
+  <div class="rail tabs" id="tabs" role="tablist" aria-label="Server categories" data-top></div>
+
+  <main id="main">
+    <section id="recentSec" hidden>
+      <h2 class="sh"><svg class="i c-vi" aria-hidden="true"><use href="#i-clock"/></svg>Continue<i></i></h2>
+      <div class="rail pr" id="recentRail"></div>
+    </section>
+    <section id="favSec" hidden>
+      <h2 class="sh"><svg class="i c-am" aria-hidden="true"><use href="#i-star"/></svg>Favorites<i></i></h2>
+      <div class="rail pr" id="favRail"></div>
+    </section>
+    <section id="pickSec" hidden>
+      <h2 class="sh"><svg class="i c-am" aria-hidden="true"><use href="#i-bolt"/></svg>Top Picks<i></i></h2>
+      <div class="rail pr" id="pickRail"></div>
+    </section>
+
+    <section>
+      <h2 class="sh"><svg class="i c-cy" aria-hidden="true"><use href="#i-server"/></svg><span id="gridTitle">All Servers</span><i></i><span class="meta" id="meta"></span></h2>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" hidden>
+        <div class="big"><svg class="i" aria-hidden="true"><use href="#i-radio"/></svg></div>
+        <h3 id="emptyT">Nothing on this channel</h3>
+        <p id="emptyP">No servers match your search or category.</p>
+        <button class="f btn ghost" id="emptyB" data-act="reset"><svg class="i" aria-hidden="true"><use href="#i-reset"/></svg>Show everything</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== Options / settings overlay ===== -->
+<div class="ov" id="ov" hidden role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+  <div class="panel" id="panel"></div>
+</div>
+
+<footer class="hints" id="hints"><div id="hintList"></div><div class="ver">BDIX HUB TV · v3.0</div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"><div class="tI" id="tI"></div><span class="tM" id="tM"></span></div>
+
+<script>
+/* ==================== DATASET (106 providers · 285 links) ==================== */
+var DATA = [{"id":"m_ftpbd","name":"Business Network (FTPBD)","isp":"Business Network / BNet","category":"media","url":"http://ftpbd.net","altUrls":["http://103.58.73.6","http://103.58.73.7","http://103.58.73.8","http://103.58.73.9","http://103.58.73.10","http://103.58.73.10:8096","http://server1.ftpbd.net","http://server2.ftpbd.net","http://server3.ftpbd.net","http://server4.ftpbd.net","http://server5.ftpbd.net","http://media.ftpbd.net:8096","http://www.bnet-bd.com"]},{"id":"m_circle","name":"Circle Network (CircleFTP)","isp":"Circle Network","category":"media","url":"http://circleftp.net","altUrls":["http://new.circleftp.net","http://old.circleftp.net","http://ftp4.circleftp.net","http://103.170.204.84","http://15.1.1.4","http://15.1.1.5","http://emby.circleftp.net:8096","https://circlenetworkbd.net"]},{"id":"m_sam","name":"SAM Online (Dhakaflix / SAMFTP)","isp":"SAM Online","category":"media","url":"http://172.16.50.4","altUrls":["http://172.16.50.7","https://samftp.com","http://movie.sambd.net:8096","https://sambd.com"]},{"id":"m_khulnaflix","name":"Khulnaflix & Bokasoka","isp":"Cogent Broadband","category":"media","url":"http://khulnaflix.net","altUrls":["http://file.khulnaflix.net","http://bokasoka.net","http://bokasoka.net/NAS1","http://103.153.175.254/NAS1","https://www.cogentbroadband.net"]},{"id":"m_discovery","name":"Discovery FTP (DFlix)","isp":"Discovery Internet","category":"media","url":"http://discoveryftp.net","altUrls":["http://dflix.discoveryftp.net","http://cds1.discoveryftp.net","http://cds2.discoveryftp.net","http://cds3.discoveryftp.net","http://103.120.165.196","https://www.discoverynetbd.com"]},{"id":"m_showtime","name":"Showtime BD","isp":"One Net Communications / OneSky","category":"media","url":"http://www.showtimebd.com","altUrls":["http://103.77.252.113","http://10.100.100.10","http://10.100.100.12","http://10.100.100.13","https://www.1netbd.com","http://www.onesky.com.bd"]},{"id":"m_ctgmovies","name":"CTG Movies & CrazyCTG","isp":"Digital Dot Net (DDN)","category":"media","url":"http://ctgmovies.com","altUrls":["http://www.ddnbd.fun","http://crazyctg.com","http://media.ctgfun.com","https://ddnbd.com"]},{"id":"m_ebox","name":"E-Box Live Media","isp":"Exord Online","category":"media","url":"http://play.ebox.live","altUrls":["http://fs.ebox.live","http://fileserver.ebox.live","http://103.49.168.107","http://www.exordonline.com"]},{"id":"m_icc","name":"ICC FTP Server","isp":"ICC Communication Ltd.","category":"media","url":"http://10.16.100.244","altUrls":["http://10.16.100.202/ftps10","http://10.16.100.206/ftps3","https://icc.com.bd","https://iccfios.net","https://icctalk.com"]},{"id":"m_dhakamovie","name":"DhakaMovie","isp":"Antaranga Dot Com Ltd.","category":"media","url":"http://dhakamovie.com","altUrls":["http://103.237.37.181","https://www.antbd.com","http://www.antbd.net"]},{"id":"m_naturalbd","name":"NaturalBD","isp":"X-Press Technologies Ltd.","category":"media","url":"http://www.naturalbd.com","altUrls":["http://103.43.148.68","http://xpress.ltd"]},{"id":"m_timepass","name":"TimepassBD","isp":"Skyview Online Ltd.","category":"media","url":"http://www.timepassbd.live","altUrls":["http://ftp.timepassbd.live","http://103.200.36.250","http://skyviewonlineltd.com"]},{"id":"m_citycloud","name":"Citycloud FTP","isp":"Citycom Network","category":"media","url":"http://103.204.244.70/Data/Data","altUrls":["http://103.204.244.70","http://11.11.11.11","https://www.citycomnetwork.com.bd"]},{"id":"m_nagordola","name":"Nagordola","isp":"Carnival Internet","category":"media","url":"http://www.nagordola.com.bd","altUrls":["http://103.106.238.74:80/Data","http://103.106.238.74:80/Data4","https://carnival.com.bd"]},{"id":"m_elaach","name":"Elaach Media","isp":"Triangle Services Ltd.","category":"media","url":"http://www.elaach.com","altUrls":["http://www.triangle.com.bd"]},{"id":"m_unique","name":"Unique Download BD","isp":"Unique Internet","category":"media","url":"http://www.uniquedownloadbd.com","altUrls":["http://103.91.144.230/ftpdata","http://103.91.144.230","https://uniquenetbd.com"]},{"id":"m_surzomama","name":"Surzomama Storage","isp":"Sun Online","category":"media","url":"http://103.85.235.254/storage","altUrls":["http://103.85.235.254","https://sunonlinebd.com"]},{"id":"m_mojaloss","name":"Mojaloss Stream","isp":"Mojaloss","category":"media","url":"https://www.mojaloss.stream","altUrls":[]},{"id":"m_fnf","name":"FNF Online Movies","isp":"FNF Online","category":"media","url":"http://movies.fnfonlinebd.com","altUrls":["http://103.82.8.194/Data","http://103.82.8.194","http://www.fnfonlinebd.com"]},{"id":"m_deshnet","name":"DeshNet FTP","isp":"DeshNet Broadband","category":"media","url":"http://103.152.18.18/Data","altUrls":["http://103.152.18.18","https://deshnetbd.com"]},{"id":"m_ihub","name":"iHub Live","isp":"Inspire Broadband","category":"media","url":"http://ihub.live","altUrls":["http://sg-cdn.ihub.live:8787/download/games","https://inspirebroadband.net"]},{"id":"m_colbd","name":"SmartFlix & MetroMedia","isp":"Chittagong Online Ltd. (COLBD)","category":"media","url":"http://www.smartflix.digital","altUrls":["http://www.smartstudio.digital","http://metromedia.digital","http://www.colbd.com","https://fiber.colbd.com"]},{"id":"m_cloudone","name":"C1 Movies & BDMovies","isp":"CloudOne Internet","category":"media","url":"http://www.c1movies.com","altUrls":["http://bdmovies.net","http://cloudone.com.bd"]},{"id":"m_linktech","name":"LinkFTP","isp":"Link Technologies","category":"media","url":"http://play.linkftp.com","altUrls":["http://cdn.linkftp.com","https://linktech.net.bd"]},{"id":"m_tajpata","name":"Tajpata FTP","isp":"Tajpata","category":"media","url":"http://tajpata.com","altUrls":["http://file.tajpata.com","http://103.14.129.246/data","http://103.14.129.246"]},{"id":"m_ksnetwork","name":"WOW Movie Zone","isp":"KS Network Ltd.","category":"media","url":"http://172.27.27.83","altUrls":["http://172.27.27.84","http://172.27.27.26//2TB4","http://172.27.27.124/s1d1","http://172.27.27.244/2TB1","http://172.27.27.245/2TB1","http://172.27.27.246/2TB1","http://172.27.27.247/2TB1","http://172.27.27.248/2TB1","http://172.27.27.249/2TB1","http://172.27.27.250/2TB1","http://172.27.27.251/2TB2","http://172.27.27.252/2TB2","https://ksnetworkbd.com"]},{"id":"m_mazeda","name":"Mazeda FTP Web","isp":"Mazeda Networks","category":"media","url":"http://ftpweb.mazedanetworks.net","altUrls":["http://172.22.22.100","http://172.22.22.101","http://172.22.22.105:8096","https://www.mazedanetworks.net"]},{"id":"m_sunplex","name":"Sunplex","isp":"Vision Technologies Ltd.","category":"media","url":"https://sunplex.net","altUrls":["https://storage.sunplex.net","https://visiontechnologiesltd.com"]},{"id":"m_moviemela","name":"MovieMela","isp":"Future.Net","category":"media","url":"http://www.moviemela.live","altUrls":["http://fn-bd.com"]},{"id":"m_dhakaftp","name":"DhakaFTP","isp":"Amarnet System","category":"media","url":"http://dhakaftp.com","altUrls":["http://dhakaftp.com/Data","http://103.205.233.70/Data","http://103.205.233.70","http://amarnetsystem.com"]},{"id":"m_freedownload","name":"FreeDownloadBD","isp":"FreeDownloadBD","category":"media","url":"http://www.freedownloadbd.com","altUrls":["http://172.17.172.242"]},{"id":"m_dfnbd","name":"DFN Media","isp":"Dhaka Fiber Net","category":"media","url":"http://media.dfnbd.net","altUrls":["https://www.dfnbd.net"]},{"id":"m_mcbroadband","name":"MC Broadband FTP","isp":"MC Broadband","category":"media","url":"http://172.17.254.2","altUrls":["http://mcbroadbandbd.com"]},{"id":"m_candybd","name":"CandyBD","isp":"Planet 3 Communication","category":"media","url":"http://www.candybd.net","altUrls":["http://candybd.net/upload/source/movies","https://planet3communication.com"]},{"id":"m_mcnbd","name":"MCN Fun & FTP","isp":"Millennium Computers & Network","category":"media","url":"http://fun.mcnbd.com","altUrls":["http://ftp.mcnbd.com","https://www.mcnbd.com"]},{"id":"m_pollyflix","name":"Pollyflix & AMRBD FS","isp":"AMRBD","category":"media","url":"http://pollyflix.com","altUrls":["http://fs.amrbd.com","http://fs2.amrbd.com","http://12.1.1.2","http://12.1.1.3/flix"]},{"id":"m_timenai","name":"TimeNai FTP","isp":"Speed Tech Online","category":"media","url":"http://timenai.com","altUrls":["http://103.199.155.150/ftpdata","http://103.199.155.150","http://come2speed.com"]},{"id":"m_dnetbd","name":"DNetDrive","isp":"DNetBD","category":"media","url":"https://dnetdrive.com","altUrls":["http://103.76.196.90","https://dnetbd.com"]},{"id":"m_rangdhanu","name":"Rangdhanu Live & Emby","isp":"Rangdhanu Network","category":"media","url":"http://fs.rangdhanu.live","altUrls":["http://emby.rangdhanu.live","https://www.rangdhanu.live"]},{"id":"m_moviedom","name":"Moviedom & MovieHaat","isp":"Race Online Ltd.","category":"media","url":"http://moviedom.live","altUrls":["http://movie.moviedom.live","http://59.152.101.198","http://moviehaat.net","http://cdn2.moviehaat.net:8080/Upload","https://www.race.net.bd"]},{"id":"m_dflix","name":"DFlix Live","isp":"Dot Internet","category":"media","url":"http://dflix.live","altUrls":["http://fs1.dflix.live","http://www.dotinternetbd.com"]},{"id":"m_moviemaja","name":"MovieMaja","isp":"SkyInfo Online","category":"media","url":"http://moviemaja.net","altUrls":["http://moviemaja.net/Data","http://103.132.187.18/Data","http://103.132.187.18","http://www.skyinfoonline.net"]},{"id":"m_sebait","name":"Seba IT FTP","isp":"Seba IT","category":"media","url":"http://103.195.1.50/Data","altUrls":["http://103.195.1.50"]},{"id":"m_ibdplex","name":"IBDPlex & MovieBazar","isp":"City Online Ltd.","category":"media","url":"https://ibdplex.net","altUrls":["http://moviebazar.net","https://www.cityonlinebd.net"]},{"id":"m_globalcomm","name":"Global Communication FTP","isp":"Global Communication","category":"media","url":"http://103.113.16.46","altUrls":["http://globalcommunicationbd.com"]},{"id":"m_flixhub","name":"FlixHub","isp":"Radisson Network","category":"media","url":"http://flixhub.net","altUrls":["http://flixhub.net/Data","http://45.123.41.54/Data","http://45.123.41.54","https://www.radisson-bd.net"]},{"id":"m_abcmovies","name":"ABCMovies & ABCFlix","isp":"Empowering Net","category":"media","url":"http://abcmoviesbd.com","altUrls":["http://abcflixbd.com","http://103.103.239.66","https://epnetbd.com"]},{"id":"tv_ctgtv","name":"CTGTV & BDIXTV","isp":"Digital Dot Net (DDN)","category":"tv","url":"http://www.ctgtv.live","altUrls":["http://ddn.oncast.me","http://172.20.1.1","http://bdixtv.live"]},{"id":"tv_amrbd","name":"AMRBD Live TV","isp":"AMRBD","category":"tv","url":"http://amrbd.com","altUrls":["http://103.136.200.246"]},{"id":"tv_ebox","name":"E-Box Live TV","isp":"Exord Online","category":"tv","url":"http://tv.ebox.live","altUrls":["http://tv2.ebox.live"]},{"id":"tv_smartbox","name":"SmartBox Digital TV","isp":"Chittagong Online Ltd.","category":"tv","url":"http://smartbox.digital","altUrls":[]},{"id":"tv_c1live","name":"C1 Live TV","isp":"CloudOne Internet","category":"tv","url":"http://c1live.com","altUrls":[]},{"id":"tv_otvftpbd","name":"FTPBD OpenTV","isp":"Business Network (FTPBD)","category":"tv","url":"http://otv.ftpbd.net","altUrls":[]},{"id":"tv_unix","name":"Unix Live TV","isp":"Unix Network","category":"tv","url":"http://30.30.30.30","altUrls":[]},{"id":"tv_khulnaflix","name":"Khulnaflix & Bokasoka TV","isp":"Cogent Broadband","category":"tv","url":"http://tv.khulnaflix.net","altUrls":["http://bokasoka.net:8080","http://172.27.27.27:8080"]},{"id":"tv_bdiptv","name":"BDIPTV Stream","isp":"BDIPTV","category":"tv","url":"http://bdiptv.stream","altUrls":["http://bdiptv.net","http://bciptv.net","http://15.1.1.10"]},{"id":"tv_starflix","name":"StarflixBD Live TV","isp":"Stargate Communications","category":"tv","url":"http://172.27.27.3","altUrls":[]},{"id":"tv_plusbox","name":"Plusbox TV","isp":"Plusbox","category":"tv","url":"http://plusbox.tv","altUrls":[]},{"id":"tv_dugdugi","name":"Dugdugi Live","isp":"One Net Communications","category":"tv","url":"http://dugdugilive.com","altUrls":[]},{"id":"tv_rangdhanu","name":"Rangdhanu Live TV","isp":"Rangdhanu Network","category":"tv","url":"http://tv.rangdhanu.live","altUrls":["http://plus.tv.rangdhanu.live","https://hdtv.rangdhanu.live"]},{"id":"tv_roarzone","name":"Roarzone TV","isp":"Roarzone","category":"tv","url":"http://tv.roarzone.info","altUrls":[]},{"id":"tv_ibox","name":"iBox Live TV","isp":"iCommunication Broadband","category":"tv","url":"http://tv.iboxbd.online","altUrls":[]},{"id":"tv_nagordola","name":"Nagordola Live TV","isp":"Carnival Internet","category":"tv","url":"http://tv.nagordola.live","altUrls":[]},{"id":"tv_dflix","name":"DFlix Live TV","isp":"Dot Internet","category":"tv","url":"http://tv.dflix.live","altUrls":["http://59.153.100.77"]},{"id":"tv_linktech","name":"LinkTech TV","isp":"Link Technologies","category":"tv","url":"http://tv.linktech.net.bd","altUrls":[]},{"id":"tv_tetrasoft","name":"Tetrasoft TV","isp":"Tetrasoft","category":"tv","url":"http://tv.tetrasoftbd.com","altUrls":[]},{"id":"tv_icc","name":"ICC Live TV","isp":"ICC Communication","category":"tv","url":"http://10.16.100.244/livetv.php","altUrls":[]},{"id":"tv_ctgoz","name":"SmartOnline CTGOZ TV","isp":"SmartOnline","category":"tv","url":"http://live.ctgoz.com","altUrls":[]},{"id":"tv_projapoti","name":"Projapoti Live","isp":"Projapoti","category":"tv","url":"http://projapoti.live","altUrls":[]},{"id":"tv_satrong","name":"Satrong TV","isp":"Satrong","category":"tv","url":"http://tv.satrong.live","altUrls":["http://103.214.156.2"]},{"id":"tv_aliflaila","name":"Aliflaila TV","isp":"Aliflaila","category":"tv","url":"http://tv.aliflailabd.com","altUrls":[]},{"id":"tv_samonline","name":"SAMOnline (Dhakaflix TV)","isp":"SAM Online","category":"tv","url":"http://172.16.50.22","altUrls":["http://172.16.50.2"]},{"id":"tv_link71","name":"Link 71 Live TV","isp":"Link 71","category":"tv","url":"http://103.102.27.172","altUrls":[]},{"id":"tv_nbox","name":"Novus NBox TV","isp":"Novus Network","category":"tv","url":"https://tv.nbox.live","altUrls":[]},{"id":"tv_moviebazar","name":"Movie Bazar Live TV","isp":"Movie Bazar","category":"tv","url":"http://live.moviebazar.net","altUrls":["http://113.212.111.246"]},{"id":"tv_anosbd","name":"Aftabnagar Online TV","isp":"Aftabnagar Online","category":"tv","url":"http://tv.anosbd.com","altUrls":["http://103.113.224.68"]},{"id":"tv_flashnet","name":"Flash Net TV","isp":"Flash Net","category":"tv","url":"http://tv.flashnetbd.net","altUrls":[]},{"id":"tv_itcn","name":"ITCN IPTV","isp":"IT Connection Network","category":"tv","url":"http://iptv.itcnbd.com","altUrls":[]},{"id":"tv_medialink24","name":"Medialink24 TV","isp":"Medialink24 Net","category":"tv","url":"http://tv.medialink24.net","altUrls":[]},{"id":"tv_mcnbd","name":"Millennium (MCN) IPTV","isp":"Millennium Computers","category":"tv","url":"http://iptv.mcnbd.com","altUrls":[]},{"id":"tv_dfnbd","name":"Dhaka Fiber Net TV","isp":"Dhaka Fiber Net","category":"tv","url":"http://172.50.50.8","altUrls":[]},{"id":"tv_ksnetwork","name":"KS Network (WOW IPTV)","isp":"KS Network Ltd.","category":"tv","url":"https://iptv.ksnetworkbd.com","altUrls":["http://172.27.27.85"]},{"id":"tv_fnbd","name":"Future Net TV","isp":"Future Net","category":"tv","url":"http://tv.fn-bd.com","altUrls":[]},{"id":"tv_aknetworks","name":"AKLiveTV","isp":"AKNetworks","category":"tv","url":"http://aklivetv.com","altUrls":[]},{"id":"tv_bdlan","name":"BDLAN Live TV","isp":"BDLAN","category":"tv","url":"http://live.bdlan.net","altUrls":[]},{"id":"tv_sparklink","name":"Sparklink TV","isp":"Sparklink","category":"tv","url":"http://tv.sparklinkbd.com","altUrls":[]},{"id":"tv_mtbsl","name":"MTBSL TV","isp":"MTBSL","category":"tv","url":"http://tv.mtbsl.com","altUrls":[]},{"id":"tv_mirpur","name":"Mirpur Online Live TV","isp":"Mirpur Online","category":"tv","url":"http://livetv.mirpur.online","altUrls":[]},{"id":"tv_bdtv","name":"BDTV Live","isp":"BDTV","category":"tv","url":"http://bdtv.live","altUrls":[]},{"id":"tv_khulnatv","name":"Khulna Live TV","isp":"Khulna Live TV","category":"tv","url":"http://khulnatv.live","altUrls":["http://khulna.bid","http://103.150.6.2"]},{"id":"tv_livebdix","name":"Live BDIX TV","isp":"Live BDIX","category":"tv","url":"https://livebdix.com","altUrls":["https://tv.livebdix.com"]},{"id":"tv_race","name":"Race Online IPTV","isp":"Race Online Ltd.","category":"tv","url":"https://iptv.race.net.bd","altUrls":[]},{"id":"tv_jadoo","name":"Jadoo Digital IPTV","isp":"Jadoo Broadband","category":"tv","url":"https://iptv.jadoodigital.com","altUrls":[]},{"id":"tv_khulnaplex","name":"Khulnaplex TV","isp":"Daulatpur Online","category":"tv","url":"http://khulnaplex.net/tv","altUrls":[]},{"id":"tv_ayanmedia","name":"AyanMedia TV","isp":"AyanMedia","category":"tv","url":"http://tv.ayanmedia.net","altUrls":[]},{"id":"tv_amazetv","name":"Amaze TV","isp":"Link3 Technologies","category":"tv","url":"http://www.amaze-tv.com","altUrls":[]},{"id":"tv_bioscope","name":"Bioscope Live","isp":"Public / OTT","category":"tv","url":"https://www.bioscopelive.com","altUrls":[]},{"id":"tv_jagobd","name":"JagoBD TV","isp":"Public / OTT","category":"tv","url":"http://www.jagobd.com","altUrls":["https://beta.jagobd.com"]},{"id":"tv_bongobd","name":"BongoBD","isp":"Public / OTT","category":"tv","url":"https://bongobd.com","altUrls":[]},{"id":"tv_bdixsports","name":"BDIX Sports TV","isp":"Public / Sports","category":"tv","url":"http://tv.bdixsports.com","altUrls":[]},{"id":"tv_livetvbd","name":"LiveTV BD","isp":"Public / OTT","category":"tv","url":"http://livetv.com.bd","altUrls":[]},{"id":"tv_durbin","name":"Durbin Live","isp":"Public / OTT","category":"tv","url":"http://durbinlive.com","altUrls":[]},{"id":"tv_hotflix","name":"Hotflix Stream","isp":"Public / OTT","category":"tv","url":"https://hotflix.stream","altUrls":[]},{"id":"tv_globalbangla","name":"Global Bangla TV","isp":"Public / OTT","category":"tv","url":"http://globalbanglatv.com","altUrls":[]},{"id":"tv_webtvbd","name":"WebTV BD","isp":"Public / OTT","category":"tv","url":"https://www.webtvbd.com","altUrls":[]},{"id":"tv_crichd","name":"CricHD Live Sports","isp":"Public / Sports","category":"tv","url":"https://crichd.tv","altUrls":[]}];
+</script>
+
+<script>
+(function(){
+'use strict';
+
+/* ==================== CONSTANTS ==================== */
+var PICKS=['m_sam','m_circle','m_ftpbd','tv_bioscope','tv_jagobd','m_discovery','tv_ctgtv','m_khulnaflix','tv_amrbd','m_showtime'];
+var IPRE=/^https?:\/\/\d{1,3}(\.\d{1,3}){3}/;
+var TABS=[
+  {k:'all',   l:'All',          i:'grid',   c:''},
+  {k:'media', l:'Media & FTP',  i:'folder', c:'c-cy'},
+  {k:'tv',    l:'Live TV',      i:'tv',     c:'c-pk'},
+  {k:'ip',    l:'Direct IP',    i:'wifi',   c:'c-gn'},
+  {k:'favs',  l:'Favorites',    i:'star',   c:'c-am'},
+  {k:'recent',l:'Recent',       i:'clock',  c:'c-vi'}
+];
+var TITLES={all:'All Servers',media:'Media & FTP Servers',tv:'Live TV & IPTV',ip:'Direct IP Access',favs:'Your Favorites',recent:'Recently Opened'};
+var SET=[
+  {k:'ts',t:'Text size',d:'Makes everything bigger or smaller.',o:[[1,'Normal'],[1.15,'Large'],[1.3,'Extra large']]},
+  {k:'dn',t:'Card size',d:'Large cards are easier to read. Compact fits more on screen.',o:[[0,'Large'],[1,'Compact']]},
+  {k:'mx',t:'Screen margin',d:'Increase this if the edges of the page are cut off by your TV.',o:[[20,'Small'],[40,'Medium'],[64,'Large']]},
+  {k:'fx',t:'Visual effects',d:'Switch to Reduced if scrolling ever feels slow.',o:[[1,'Full'],[0,'Reduced']]},
+  {k:'opt',t:'Options button on cards',d:'Adds a ⋯ button to each card. Turn on if Hold OK does not work on your remote.',o:[[0,'Off'],[1,'On']]}
+];
+var HINTS={
+  nav:[['▲▼◀▶','Move'],['OK','Select'],['Back','Top / Exit']],
+  card:[['▲▼◀▶','Move'],['OK','Open'],['Hold OK','Mirrors & ★'],['Back','Top']],
+  inp:[['OK','Type'],['▼','Results'],['Back','Done']],
+  ov:[['▲▼◀▶','Move'],['OK','Select'],['Back','Close']]
+};
+var KEYDIR={37:'left',38:'up',39:'right',40:'down',ArrowLeft:'left',ArrowUp:'up',ArrowRight:'right',ArrowDown:'down'};
+
+/* ==================== HELPERS ==================== */
+function $(id){return document.getElementById(id);}
+var ESC={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return ESC[c];});}
+function ico(n,c){return '<svg class="i'+(c?' '+c:'')+'" aria-hidden="true" focusable="false"><use href="#i-'+n+'"/></svg>';}
+function label(u){return u.replace(/^https?:\/\/(www\.)?/i,'').replace(/\/$/,'');}
+function hue(str){var h=0;for(var i=0;i<str.length;i++){h=(h*31+str.charCodeAt(i))>>>0;}return h%360;}
+function initials(name){
+  var w=name.replace(/\(.*?\)/g,'').trim().split(/\s+/).filter(function(x){return /[A-Za-z0-9]/.test(x);});
+  if(!w.length)return '?';
+  if(w.length===1)return w[0].slice(0,2).toUpperCase();
+  return (w[0][0]+w[1][0]).toUpperCase();
+}
+function avatar(id){var h=hue(id);return 'background:linear-gradient(135deg,hsl('+h+',68%,46%),hsl('+((h+45)%360)+',68%,24%))';}
+var LS={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+
+/* ==================== STATE ==================== */
+var BY={},TOTAL=0;
+DATA.forEach(function(s){
+  BY[s.id]=s;
+  s._all=[s.url].concat(s.altUrls||[]);
+  TOTAL+=s._all.length;
+  s._ip=s._all.some(function(u){return IPRE.test(u);});
+  s._hay=(s.name+' '+s.isp+' '+s._all.join(' ')+' '+(s.category==='tv'?'live tv iptv channels':'media ftp movies emby jellyfin')).toLowerCase();
+});
+
+var favs=LS.get('bdix_hub_favs',[]).filter(function(id){return BY[id];});
+var recents=LS.get('bdix_hub_recent',[]).filter(function(id){return BY[id];});
+var prefs=LS.get('bdix_hub_pref',{});
+var reduce=false;try{reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+var old=LS.get('bdix_hub_settings',{});
+var cfg={ts:1,dn:0,mx:old.overscan?64:40,fx:reduce?0:1,opt:0};
+var saved=LS.get('bdix_hub_cfg',{});for(var k in saved){if(saved.hasOwnProperty(k))cfg[k]=saved[k];}
+
+var cat='all',query='',ovOpen=false,ovKind='',ovFrom=null,opening=false;
+function isFav(id){return favs.indexOf(id)>-1;}
+function openUrl(s){var p=prefs[s.id];return(p&&s._all.indexOf(p)>-1)?p:s.url;}
+function aria(s){var n=s._all.length;return s.name+', '+(s.category==='tv'?'Live TV':'Media and FTP')+', '+n+(n>1?' links':' link')+(isFav(s.id)?', favorite':'');}
+
+/* ==================== SETTINGS ==================== */
+function applyCfg(){
+  var r=document.documentElement,b=document.body;
+  r.style.setProperty('--ts',cfg.ts);
+  r.style.setProperty('--mx',cfg.mx+'px');
+  b.classList.toggle('fx',!!cfg.fx);
+  b.classList.toggle('dense',cfg.dn===1);
+  b.classList.toggle('show-opt',!!cfg.opt);
+}
+
+/* ==================== CLOCK / TOAST ==================== */
+function tick(){
+  var n=new Date(),h=n.getHours(),m=n.getMinutes(),ap=h>=12?'PM':'AM';h=h%12||12;
+  $('clk').textContent=h+':'+(m<10?'0'+m:m)+' '+ap;
+  $('dte').textContent=n.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+var toastT;
+function toast(msg,icon,color){
+  var t=$('toast');
+  $('tM').textContent=msg;
+  $('tI').innerHTML=ico(icon||'check',(icon==='loader'?'spin ':'')+(color||'c-am'));
+  t.style.borderColor={'c-am':'#fbbf24','c-cy':'#22d3ee','c-pk':'#f87171','c-mut':'#64748b'}[color||'c-am']||'#fbbf24';
+  t.className='toast show';
+  clearTimeout(toastT);
+  toastT=setTimeout(function(){t.className='toast';},2300);
+}
+
+/* ==================== RENDER ==================== */
+function posterHTML(s,ctx){
+  var tv=s.category==='tv';
+  return '<a class="f poster" href="'+esc(openUrl(s))+'" data-act="open" data-id="'+s.id+'" data-fk="'+ctx+':'+s.id+'" style="'+avatar(s.id)+'" aria-label="'+esc(aria(s))+'">'
+    +'<span class="pt">'+(tv?'LIVE TV':'MEDIA')+'</span>'+(isFav(s.id)?ico('star','pf fill'):'')
+    +'<span><span class="pi">'+esc(s.isp)+'</span><span class="pn">'+esc(s.name)+'</span></span></a>';
+}
+function cardHTML(s){
+  var tv=s.category==='tv',url=openUrl(s),n=s._all.length;
+  return '<div class="item"><a class="f card" href="'+esc(url)+'" data-act="open" data-id="'+s.id+'" data-fk="g:'+s.id+'" aria-label="'+esc(aria(s))+'">'
+    +'<span class="av" style="'+avatar(s.id)+'">'+esc(initials(s.name))+'<span class="avb '+(tv?'tv':'md')+'">'+ico(tv?'tv':'folder')+'</span></span>'
+    +'<span class="cb"><span class="cn">'+(isFav(s.id)?ico('star','nf fill'):'')+esc(s.name)+'</span>'
+    +'<span class="ci">'+esc(s.isp)+'</span>'
+    +'<span class="cl"><span class="ch">'+esc(label(url))+'</span>'+(n>1?'<span class="cc">'+n+' links</span>':'')+'</span></span></a>'
+    +'<button class="f opt" data-act="menu" data-id="'+s.id+'" aria-label="Options for '+esc(s.name)+'">'+ico('more')+'</button></div>';
+}
+function filtered(){
+  var terms=query?query.split(' '):[];
+  var r=DATA.filter(function(s){
+    if(cat==='favs'&&!isFav(s.id))return false;
+    if(cat==='recent'&&recents.indexOf(s.id)<0)return false;
+    if(cat==='ip'&&!s._ip)return false;
+    if((cat==='media'||cat==='tv')&&s.category!==cat)return false;
+    for(var i=0;i<terms.length;i++){if(s._hay.indexOf(terms[i])<0)return false;}
+    return true;
+  });
+  if(cat==='recent')r.sort(function(a,b){return recents.indexOf(a.id)-recents.indexOf(b.id);});
+  else if(cat==='favs')r.sort(function(a,b){return a.name.localeCompare(b.name);});
+  return r;
+}
+function buildTabs(){
+  $('tabs').innerHTML=TABS.map(function(t){
+    return '<button class="f tab" id="t-'+t.k+'" role="tab" data-act="tab" data-k="'+t.k+'">'+ico(t.i,t.c)+t.l+'<span class="n" id="n-'+t.k+'">0</span></button>';
+  }).join('');
+}
+function renderTabs(){
+  var counts={all:DATA.length,
+    media:DATA.filter(function(s){return s.category==='media';}).length,
+    tv:DATA.filter(function(s){return s.category==='tv';}).length,
+    ip:DATA.filter(function(s){return s._ip;}).length,
+    favs:favs.length,recent:recents.length};
+  TABS.forEach(function(t){
+    var b=$('t-'+t.k);
+    b.classList.toggle('on',t.k===cat);
+    b.setAttribute('aria-selected',t.k===cat?'true':'false');
+    $('n-'+t.k).textContent=counts[t.k];
+  });
+}
+function renderRails(){
+  var show=cat==='all'&&!query;
+  var defs=[
+    ['recentSec','recentRail','rr',recents.map(function(id){return BY[id];})],
+    ['favSec','favRail','rf',favs.slice().reverse().slice(0,12).map(function(id){return BY[id];})],
+    ['pickSec','pickRail','rp',PICKS.map(function(id){return BY[id];}).filter(Boolean)]
+  ];
+  defs.forEach(function(d){
+    var on=show&&d[3].length>0;
+    $(d[0]).hidden=!on;
+    if(on)$(d[1]).innerHTML=d[3].map(function(s){return posterHTML(s,d[2]);}).join('');
+  });
+}
+function renderGrid(){
+  var r=filtered(),links=0;
+  r.forEach(function(s){links+=s._all.length;});
+  $('gridTitle').innerHTML=query?'Results for “'+esc(query)+'”':esc(TITLES[cat]);
+  $('meta').innerHTML='<b>'+r.length+'</b> providers · <b class="am">'+links+'</b> links';
+  $('grid').innerHTML=r.map(cardHTML).join('');
+  var e=$('empty');e.hidden=r.length>0;
+  if(!r.length){
+    var t='Nothing on this channel',p='No servers match your search or category.';
+    if(!query&&cat==='favs'){t='No favorites yet';p='Hold OK on any server, then choose “Add to favorites”.';}
+    if(!query&&cat==='recent'){t='Nothing opened yet';p='Servers you open will appear here.';}
+    $('emptyT').textContent=t;$('emptyP').textContent=p;
+    $('emptyB').hidden=(cat==='all'&&!query);
+  }
+}
+function renderAll(){renderTabs();renderRails();renderGrid();}
+
+/* ==================== ACTIONS ==================== */
+function pushRecent(id){
+  recents=[id].concat(recents.filter(function(r){return r!==id;})).slice(0,10);
+  LS.set('bdix_hub_recent',recents);
+}
+function go(url,id,fk,pick){
+  if(opening)return;
+  var s=id?BY[id]:null;
+  if(s){
+    pushRecent(id);
+    if(pick){if(url===s.url)delete prefs[id];else prefs[id]=url;LS.set('bdix_hub_pref',prefs);}
+  }
+  LS.set('bdix_hub_last',{fk:fk||'',cat:cat,q:query,y:window.pageYOffset,t:Date.now()});
+  opening=true;
+  toast('Opening '+(s?s.name:label(url))+'…','loader','c-cy');
+  setTimeout(function(){window.location.href=url;},140);
+}
+function openCustom(){
+  var el=$('u'),u=el.value.trim();
+  if(!u){toast('Enter an IP or domain first','alert','c-pk');el.focus();return;}
+  if(!/^[a-z][a-z0-9+.\-]*:\/\//i.test(u))u='http://'+u;
+  try{new URL(u);}catch(e){toast('That address doesn’t look right','alert','c-pk');return;}
+  go(u,null,'',false);
+}
+function focusKey(){
+  var a=document.activeElement,fk=a&&a.getAttribute?a.getAttribute('data-fk'):null;
+  var cards=Array.prototype.slice.call($('grid').querySelectorAll('.card'));
+  return {fk:fk,idx:Math.max(0,cards.indexOf(a))};
+}
+function restoreFocus(f){
+  var el=f&&f.fk?document.querySelector('[data-fk="'+f.fk+'"]'):null;
+  if(!el){
+    var cards=$('grid').querySelectorAll('.card');
+    el=cards.length?cards[Math.min(f?f.idx:0,cards.length-1)]:$('t-'+cat);
+  }
+  focusEl(el);
+}
+function toggleFav(id){
+  var i=favs.indexOf(id),f=focusKey();
+  if(i<0){favs.push(id);toast('Added to Favorites','star','c-am');}
+  else{favs.splice(i,1);toast('Removed from Favorites','star','c-mut');}
+  LS.set('bdix_hub_favs',favs);
+  renderAll();
+  if(ovOpen&&ovKind==='d'){updateFavBtn();}
+  else restoreFocus(f);
+}
+function setCat(k){cat=k;renderAll();}
+function applyQuery(){
+  query=$('q').value.toLowerCase().replace(/\s+/g,' ').trim();
+  $('clr').hidden=!query;
+  renderAll();
+}
+function clearSearch(){$('q').value='';applyQuery();$('q').focus();}
+function resetFilters(){$('q').value='';query='';$('clr').hidden=true;cat='all';renderAll();focusEl($('t-all'));}
+
+/* ==================== OVERLAYS ==================== */
+function favBtnHTML(on){return ico('star','fill'+(on?' am':''))+(on?'Favorited':'Add to favorites');}
+function updateFavBtn(){var b=$('favBtn');if(b&&ovId)b.innerHTML=favBtnHTML(isFav(ovId));}
+var ovId=null;
+function detailsHTML(s){
+  var tv=s.category==='tv',def=openUrl(s);
+  var rows=s._all.map(function(u){
+    var isDef=u===def,https=/^https:/i.test(u),ip=IPRE.test(u);
+    return '<a class="f lr'+(isDef?' def':'')+'" href="'+esc(u)+'" data-act="open" data-id="'+s.id+'" data-pick="1" data-fk="">'
+      +ico(https?'lock':'server','li')+'<span class="lt">'+esc(label(u))+'</span>'
+      +'<span class="lg">'+(ip?'<em class="tg ip">IP</em>':'')+(https?'<em class="tg hs">HTTPS</em>':'')+(isDef?'<em class="tg df">DEFAULT</em>':'')+'</span></a>';
+  }).join('');
+  return '<div class="ph"><span class="av lg" style="'+avatar(s.id)+'">'+esc(initials(s.name))+'</span>'
+    +'<div class="pht"><h2 id="ovTitle">'+esc(s.name)+'</h2><p>'+esc(s.isp)+' · '+(tv?'Live TV':'Media / FTP')+'</p></div>'
+    +'<div class="pha"><button class="f btn" id="favBtn" data-act="fav" data-id="'+s.id+'">'+favBtnHTML(isFav(s.id))+'</button>'
+    +'<button class="f btn ghost" data-act="close">'+ico('x')+'Close</button></div></div>'
+    +'<div class="lh2">'+(s._all.length>1?'All links <b>'+s._all.length+'</b><span>The one you open becomes this server’s default.</span>':'Link')+'</div>'
+    +'<div class="links">'+rows+'</div>'
+    +(prefs[s.id]?'<div class="pfoot"><button class="f btn ghost" data-act="resetpref" data-id="'+s.id+'">'+ico('reset')+'Reset default link</button></div>':'');
+}
+function settingsHTML(){
+  var h='<div class="ph"><div class="pht" style="grid-column:1/3"><h2 id="ovTitle">Settings</h2><p>Tune the hub for your TV. Changes apply instantly.</p></div>'
+    +'<div class="pha"><button class="f btn ghost" data-act="close">'+ico('x')+'Close</button></div></div>';
+  SET.forEach(function(g){
+    h+='<div class="srow"><div class="st"><b>'+g.t+'</b><small>'+g.d+'</small></div><div class="seg" role="group" aria-label="'+g.t+'">'
+      +g.o.map(function(o){var on=cfg[g.k]===o[0];return '<button class="f sg'+(on?' on':'')+'" data-act="cfg" data-k="'+g.k+'" data-v="'+o[0]+'" aria-pressed="'+on+'">'+o[1]+'</button>';}).join('')
+      +'</div></div>';
+  });
+  h+='<div class="srow"><div class="st"><b>Data on this device</b><small>Favorites, history and default links never leave this TV.</small></div><div class="seg">'
+    +'<button class="f sg" data-act="clr" data-w="recent">Clear recent ('+recents.length+')</button>'
+    +'<button class="f sg" data-act="clr" data-w="favs">Clear favorites ('+favs.length+')</button></div></div>'
+    +'<p class="about">'+DATA.length+' providers · '+TOTAL+' links · v3.0</p>';
+  return h;
+}
+function showOv(kind,html,focusSel){
+  ovFrom=focusKey();ovFrom.el=document.activeElement;
+  ovKind=kind;ovOpen=true;
+  $('panel').innerHTML=html;$('panel').scrollTop=0;$('ov').hidden=false;
+  var el=$('panel').querySelector(focusSel)||$('panel').querySelector('.f');
+  focusEl(el);setHints('ov');
+}
+function openDetails(id){var s=BY[id];if(!s)return;ovId=id;showOv('d',detailsHTML(s),'.lr.def');}
+function openSettings(){ovId=null;showOv('s',settingsHTML(),'.sg.on');}
+function closeOv(){
+  if(!ovOpen)return;
+  ovOpen=false;$('ov').hidden=true;
+  if(ovKind==='s')focusEl($('gear'));
+  else restoreFocus(ovFrom);
+  setHints(ctxOf(document.activeElement));
+}
+
+/* ==================== FOCUS + SCROLL ==================== */
+function ctxOf(el){
+  if(ovOpen)return 'ov';
+  if(!el||!el.classList)return 'nav';
+  if(el.tagName==='INPUT')return 'inp';
+  if(el.classList.contains('card')||el.classList.contains('poster'))return 'card';
+  return 'nav';
+}
+function setHints(c){
+  $('hintList').innerHTML=HINTS[c].map(function(h){return '<span class="hk"><kbd>'+h[0]+'</kbd>'+h[1]+'</span>';}).join('');
+}
+var pendY=0,pendT=0,smoothOK='scrollBehavior' in document.documentElement.style;
+function ensureVisible(el){
+  if(ovOpen){
+    var p=$('panel'),r=el.getBoundingClientRect(),pr=p.getBoundingClientRect();
+    if(r.top<pr.top+12)p.scrollTop-=pr.top+12-r.top;
+    else if(r.bottom>pr.bottom-12)p.scrollTop+=r.bottom-pr.bottom+12;
+    return;
+  }
+  var rail=el.closest('.rail');
+  if(rail){
+    var rr=rail.getBoundingClientRect(),er=el.getBoundingClientRect();
+    var pad=parseFloat(getComputedStyle(rail).paddingLeft)||0,dx=0;
+    if(er.left<rr.left+pad)dx=er.left-(rr.left+pad)-er.width*.3;
+    else if(er.right>rr.right-pad)dx=er.right-(rr.right-pad)+er.width*.3;
+    if(dx)rail.scrollLeft+=dx;
+  }
+  var vh=window.innerHeight,cur=window.pageYOffset,now=Date.now();
+  var base=(now-pendT<400)?pendY:cur;
+  var rc=el.getBoundingClientRect(),top=rc.top+(cur-base),bot=rc.bottom+(cur-base);
+  var padT=16,padB=$('hints').offsetHeight+16,look=Math.min(rc.height*.4,90),y=base;
+  if(el.closest('[data-top]'))y=0;
+  else if(top<padT)y=base-(padT-top)-look;
+  else if(bot>vh-padB)y=base+(bot-(vh-padB))+look;
+  var max=Math.max(0,document.documentElement.scrollHeight-vh);
+  y=Math.max(0,Math.min(max,y));
+  if(y!==base&&y<80)y=0;
+  if(Math.abs(y-cur)>1){
+    pendY=y;pendT=now;
+    if(smoothOK)window.scrollTo({top:y,left:0,behavior:cfg.fx?'smooth':'auto'});else window.scrollTo(0,y);
+  }
+}
+function focusEl(el){
+  if(!el)return;
+  try{el.focus({preventScroll:true});}catch(e){el.focus();}
+  ensureVisible(el);
+}
+function firstFocus(){
+  if(ovOpen)return $('panel').querySelector('.f');
+  return $('t-'+cat)||$('t-all');
+}
+/* Spatial D-pad navigation: nearest focusable in the pressed direction. */
+function move(dir){
+  var root=ovOpen?$('ov'):document,cur=document.activeElement;
+  if(!cur||!cur.classList||!cur.classList.contains('f')||!root.contains(cur)){focusEl(firstFocus());return;}
+  var list=root.querySelectorAll('.f'),a=cur.getBoundingClientRect(),ax=a.left+a.width/2,ay=a.top+a.height/2;
+  var best=null,bs=1e9,horiz=(dir==='left'||dir==='right');
+  for(var i=0;i<list.length;i++){
+    var el=list[i];if(el===cur)continue;
+    var r=el.getBoundingClientRect();if(!r.width&&!r.height)continue;
+    var cx=r.left+r.width/2,cy=r.top+r.height/2,d,along,gap,off;
+    if(horiz){
+      d=dir==='right'?cx-ax:ax-cx;if(d<=4)continue;
+      along=dir==='right'?r.left-a.right:a.left-r.right;
+      gap=Math.max(0,Math.max(a.top,r.top)-Math.min(a.bottom,r.bottom));off=Math.abs(cy-ay);
+    }else{
+      d=dir==='down'?cy-ay:ay-cy;if(d<=4)continue;
+      along=dir==='down'?r.top-a.bottom:a.top-r.bottom;
+      gap=Math.max(0,Math.max(a.left,r.left)-Math.min(a.right,r.right));off=Math.abs(cx-ax);
+    }
+    if(along<0)along=0;
+    var sc=along+d*.2+gap*5+off*.6;
+    if(sc<bs){bs=sc;best=el;}
+  }
+  if(best)focusEl(best);
+}
+
+/* ==================== BACK BUTTON ==================== */
+/* Returns true when Back did something inside the hub; false when the hub is already at "home". */
+function handleBack(){
+  var a=document.activeElement;
+  if(ovOpen){closeOv();return true;}
+  if(a&&a.tagName==='INPUT'){a.blur();focusEl($('t-'+cat));return true;}
+  if(window.pageYOffset>20){focusEl($('t-'+cat));window.scrollTo(0,0);return true;}
+  if(query||cat!=='all'){resetFilters();return true;}
+  if(a!==$('t-all')){focusEl($('t-all'));return true;}
+  return false;
+}
+window.addEventListener('popstate',function(e){
+  if(e.state&&e.state.hub===1){
+    if(handleBack())history.pushState({hub:2},'');
+    else history.back();
+  }
+});
+(function armHistory(){
+  var st=history.state;
+  try{
+    if(!st||!st.hub){history.replaceState({hub:1},'');history.pushState({hub:2},'');}
+    else if(st.hub===1){history.pushState({hub:2},'');}
+  }catch(e){}
+})();
+
+/* ==================== INPUT ==================== */
+var okT=null,okEl=null,okLong=false;
+document.addEventListener('keydown',function(e){
+  document.body.classList.remove('mouse');
+  var k=e.key,kc=e.keyCode,a=document.activeElement,inp=a&&a.tagName==='INPUT';
+  var isOK=(k==='Enter'||kc===13||kc===23||k==='Select');
+  var dir=KEYDIR[k]||KEYDIR[kc];
+
+  if(isOK&&e.repeat){e.preventDefault();return;}
+
+  if(k==='Escape'||k==='GoBack'||k==='BrowserBack'||kc===4||(k==='Backspace'&&!inp)){
+    e.preventDefault();
+    if(!handleBack()&&(k==='GoBack'||k==='BrowserBack'||kc===4))history.back();
+    return;
+  }
+  if(k==='ContextMenu'||k==='Menu'||kc===82){
+    e.preventDefault();
+    var c=a&&a.closest?a.closest('.card,.poster'):null;
+    if(ovOpen)closeOv();else if(c)openDetails(c.getAttribute('data-id'));else openSettings();
+    return;
+  }
+  if(dir){
+    if(inp&&(dir==='left'||dir==='right')){
+      var atStart=a.selectionStart===0&&a.selectionEnd===0,atEnd=a.selectionStart===a.value.length;
+      if(!(dir==='left'?atStart:atEnd))return;
+    }
+    e.preventDefault();move(dir);return;
+  }
+  if(isOK){
+    if(inp){
+      if(a._typed&&a.id==='u'){e.preventDefault();openCustom();}
+      else if(a._typed&&a.id==='q'){e.preventDefault();a.blur();var f=$('grid').querySelector('.card')||$('t-'+cat);focusEl(f);}
+      return;
+    }
+    var t=a&&a.closest?a.closest('.card,.poster'):null;
+    if(t&&!ovOpen){
+      /* short press = open, hold = mirrors & favorite */
+      e.preventDefault();okEl=t;okLong=false;clearTimeout(okT);
+      okT=setTimeout(function(){okLong=true;openDetails(t.getAttribute('data-id'));},520);
+    }
+    return;
+  }
+  if(inp)return;
+  if(k==='/'||k==='s'||k==='S'){e.preventDefault();focusEl($('q'));}
+  else if(k==='f'||k==='F'){var c2=a&&a.closest?a.closest('.card,.poster'):null;if(c2)toggleFav(c2.getAttribute('data-id'));}
+  else if(k>='1'&&k<='6'){setCat(TABS[parseInt(k,10)-1].k);focusEl($('t-'+cat));}
+});
+document.addEventListener('keyup',function(e){
+  var isOK=(e.key==='Enter'||e.keyCode===13||e.keyCode===23||e.key==='Select');
+  if(!isOK||!okEl)return;
+  clearTimeout(okT);
+  var t=okEl,long=okLong;okEl=null;okLong=false;
+  if(!long&&document.activeElement===t)go(t.getAttribute('href'),t.getAttribute('data-id'),t.getAttribute('data-fk'),false);
+});
+document.addEventListener('mousemove',function(){document.body.classList.add('mouse');});
+
+var armT=null;
+document.addEventListener('click',function(e){
+  if(e.target===$('ov')){closeOv();return;}
+  var el=e.target.closest?e.target.closest('[data-act]'):null;if(!el)return;
+  var act=el.getAttribute('data-act'),id=el.getAttribute('data-id');
+  switch(act){
+    case 'open':e.preventDefault();go(el.getAttribute('href'),id,el.getAttribute('data-fk'),el.hasAttribute('data-pick'));break;
+    case 'menu':openDetails(id);break;
+    case 'fav':toggleFav(id);break;
+    case 'close':closeOv();break;
+    case 'tab':setCat(el.getAttribute('data-k'));break;
+    case 'go':openCustom();break;
+    case 'clrq':clearSearch();break;
+    case 'reset':resetFilters();break;
+    case 'settings':openSettings();break;
+    case 'resetpref':delete prefs[id];LS.set('bdix_hub_pref',prefs);renderAll();$('panel').innerHTML=detailsHTML(BY[id]);focusEl($('panel').querySelector('.lr.def'));toast('Default link reset','reset','c-cy');break;
+    case 'cfg':
+      var key=el.getAttribute('data-k');cfg[key]=Number(el.getAttribute('data-v'));LS.set('bdix_hub_cfg',cfg);applyCfg();
+      Array.prototype.forEach.call(el.parentNode.children,function(b){var on=b===el;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});
+      break;
+    case 'clr':
+      var w=el.getAttribute('data-w');
+      if(el.getAttribute('data-arm')!=='1'){
+        el.setAttribute('data-arm','1');el.textContent='Press again to confirm';
+        clearTimeout(armT);armT=setTimeout(function(){if(ovOpen&&ovKind==='s')$('panel').innerHTML=settingsHTML();},3000);
+      }else{
+        if(w==='recent'){recents=[];LS.set('bdix_hub_recent',recents);}else{favs=[];LS.set('bdix_hub_favs',favs);}
+        renderAll();$('panel').innerHTML=settingsHTML();toast(w==='recent'?'Recent history cleared':'Favorites cleared','check','c-am');
+        focusEl($('panel').querySelector('.sg.on'));
+      }
+      break;
+  }
+});
+
+var qT;
+$('q').addEventListener('input',function(){this._typed=true;clearTimeout(qT);qT=setTimeout(applyQuery,140);});
+$('u').addEventListener('input',function(){this._typed=true;});
+document.addEventListener('focusin',function(e){
+  if(e.target.tagName==='INPUT')e.target._typed=false;
+  setHints(ctxOf(e.target));
+});
+
+/* Coming back from a server (Back button): the page may be restored from cache or reloaded. */
+window.addEventListener('pageshow',function(e){
+  opening=false;$('toast').className='toast';
+  if(e.persisted){renderAll();var l=LS.get('bdix_hub_last',null);if(l&&l.fk){var el=document.querySelector('[data-fk="'+l.fk+'"]');if(el)focusEl(el);}}
+});
+
+/* ==================== INIT ==================== */
+applyCfg();tick();setInterval(tick,15000);
+buildTabs();
+(function init(){
+  var nav=window.performance&&performance.getEntriesByType?performance.getEntriesByType('navigation')[0]:null;
+  var back=nav?nav.type==='back_forward':(performance.navigation&&performance.navigation.type===2);
+  var last=LS.get('bdix_hub_last',null);
+  if(back&&last&&Date.now()-last.t<12*3600*1000){
+    cat=last.cat||'all';query=last.q||'';
+    $('q').value=query;$('clr').hidden=!query;
+  }
+  renderAll();
+  var target=null;
+  if(back&&last&&last.fk){target=document.querySelector('[data-fk="'+last.fk+'"]');}
+  if(target){window.scrollTo(0,last.y||0);focusEl(target);}
+  else focusEl($('t-'+cat));
+  setHints(ctxOf(document.activeElement));
+})();
+})();
+</script>
+</body>
+</html>
